@@ -4,7 +4,9 @@ An intelligent AI-powered application that transforms your PDF documents into in
 
 ## 🌟 Live Demo
 
-**🔗 [Try the Full Application Here](YOUR_STREAMLIT_APP_URL)**
+**🔗 [Try the Full Application Here]**
+
+website_link: https://analyzeyourdocument.streamlit.app/
 
 *This is a fully functional web application that analyzes your PDF documents in real-time. You can use it for:*
 - 📄 **Document Analysis** - Extract insights from research papers, reports, and manuals
