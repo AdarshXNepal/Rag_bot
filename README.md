@@ -329,7 +329,6 @@ By starting simple and scaling up, we're showing the true power of progressive A
 
 **💡 Ready to explore the power of free AI models for document analysis?**
 
-**[🚀 Try the Live Application](YOUR_STREAMLIT_APP_URL)**
 
 *Transform your PDFs into intelligent, queryable knowledge bases in seconds!*
 
