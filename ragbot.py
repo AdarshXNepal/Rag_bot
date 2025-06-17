@@ -11,14 +11,41 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 load_dotenv() 
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY") 
 
+
 def main():
-    print("hello word")
+    
     st.set_page_config(
         page_title="ASK PDF",
         page_icon="📚",
         layout="wide",
         initial_sidebar_state="expanded"
     )
+    
+    
+    if "api_key" not in st.session_state:
+        st.session_state.api_key = ""
+        
+    # Sidebar for API Key
+    with st.sidebar:
+        st.header("🔑 API Configuration")
+        api_key_input = st.text_input(
+        "Enter your Gemini API Key:",
+        placeholder="AIzaSy...",
+        type="password",
+        value=st.session_state.api_key
+    )
+    
+        if api_key_input != st.session_state.api_key:
+         st.session_state.api_key = api_key_input
+        if api_key_input:
+            GOOGLE_API_KEY=api_key_input
+            st.success("✅ API Key configured!")
+        else:
+            st.warning("⚠️ Please enter your Gemini API key to start chatting")
+    
+    
+
+    
     
     # Custom CSS for enhanced styling
     st.markdown("""
@@ -556,24 +583,36 @@ def main():
     </div>
     """, unsafe_allow_html=True)
     
-    # Enhanced card-like file upload section
-    upload_container = st.container()
-    with upload_container:
-    
+    # Check if API key is provided before showing upload section
+    if st.session_state.api_key:
+        # Enhanced card-like file upload section
+        upload_container = st.container()
+        with upload_container:
+        
+            st.markdown("""
+            <div class="upload-card-wrapper">
+            <h2 style="color: white; margin-bottom: 0rem;text-align:center;">📁 Upload Your PDF Document</h2>
+            </div>
+            """, unsafe_allow_html=True)
+            # File uploader with enhanced styling
+            pdf = st.file_uploader(
+                "Choose a PDF file",
+                type='pdf',
+                help="Upload your PDF document to start chatting with it",
+                label_visibility="collapsed"
+            )
+    else:
+        # Show message when API key is not provided
         st.markdown("""
-        <div class="upload-card-wrapper">
-        <h2 style="color: white; margin-bottom: 0rem;text-align:center;">📁 Upload Your PDF Document</h2>
+        <div style="text-align: center; padding: 3rem; color: rgba(255,255,255,0.7);">
+            <h4>🔑 Please enter your Gemini API key in the sidebar to get started</h4>
+            <p>Once you provide your API key, you'll be able to upload PDFs and start chatting.</p>
         </div>
         """, unsafe_allow_html=True)
-        # File uploader with enhanced styling
-        pdf = st.file_uploader(
-            "Choose a PDF file",
-            type='pdf',
-            help="Upload your PDF document to start chatting with it",
-            label_visibility="collapsed"
-        )
-    
-    if pdf is not None:
+        pdf = None
+        
+    if pdf and st.session_state.api_key:
+        
         # Processing indicator
         with st.spinner('🔄 Processing your PDF...'):
             pdf_reader = PdfReader(pdf)
@@ -645,29 +684,43 @@ def main():
                     st.write(msg["content"])
         
         # Prominent chat input
+
         user_question = st.chat_input("💭 Ask anything from your uploaded PDF...")
-        
+
         if user_question:
             st.session_state.messages.append({"role": "user", "content": user_question})
             docs = KNOWLEDGE_BASE.similarity_search(user_question)
             chain = load_qa_chain(llm, chain_type="stuff")
-            
+
             with st.chat_message("user"):
                 st.write(user_question)
-            
+
             with st.chat_message("assistant"):
                 with st.spinner("🤔 Thinking..."):
-                   
-                    response = chain.run(input_documents=docs, question=user_question)
-                    st.write(response)
-            
+                    if not docs:
+                        st.write("**Data not found in your PDF.**")
+                        st.write("Searching web...")
+                        # Ask Gemini for a 10-word description about the question
+                        web_prompt = (
+                        f"Give a very short, 10-word description about: {user_question}"
+                        )
+                        web_response = llm.invoke(web_prompt)
+                        st.write(web_response)
+                        response = f"Data not found in your PDF. Searching web... {web_response}"
+                    else:
+                        response = chain.run(input_documents=docs, question=user_question)
+                        st.write(response)
+
             st.session_state.messages.append({"role": "assistant", "content": response})
-            
+
             # Auto-scroll to bottom
             st.rerun()
     
+    elif not st.session_state.api_key:
+        # Welcome message when API key is not provided
+        pass  # Already handled above
     else:
-        # Welcome message when no PDF is uploaded
+        # Welcome message when no PDF is uploaded but API key is provided
         st.markdown("""
         <div style="text-align: center; padding: 3rem; color: rgba(255,255,255,0.7);">
             <h4>👆 Upload a PDF to get started</h4>
